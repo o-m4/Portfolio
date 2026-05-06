@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://yourdomain.com"),
+  metadataBase: new URL("https://portfolio-brown-gamma-88.vercel.app"),
   title: {
     default: "Om Yadav | AI Systems & Backend Engineer",
     template: "%s | Om Yadav"
