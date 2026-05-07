@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { Mail, ExternalLink, ChevronDown, Terminal, Server, Brain, Code, FileText, Send } from "lucide-react";
+import { Mail, ExternalLink, ChevronDown, Terminal, Server, Brain, Code, FileText, Send, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 const Github = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -35,7 +35,36 @@ const staggerContainer = {
 
 export default function Portfolio() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const glowRef = useRef<HTMLDivElement>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+
+    const formData = new FormData(e.currentTarget);
+    formData.append("access_key", process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "YOUR_ACCESS_KEY_HERE");
+
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        setSubmitStatus("success");
+        (e.target as HTMLFormElement).reset();
+      } else {
+        setSubmitStatus("error");
+      }
+    } catch (err) {
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     let animationFrameId: number;
@@ -485,23 +514,40 @@ export default function Portfolio() {
               </a>
             </motion.div>
 
-            <motion.form variants={fadeIn} className="space-y-4 text-left" onSubmit={(e) => e.preventDefault()}>
+            <motion.form variants={fadeIn} className="space-y-4 text-left" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="name" className="text-sm font-medium text-zinc-300">Name</label>
-                  <Input id="name" placeholder="Alan Turing" className="bg-zinc-900/40 border-zinc-800 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/50 transition-all" />
+                  <Input id="name" name="name" required placeholder="Alan Turing" className="bg-zinc-900/40 border-zinc-800 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/50 transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-zinc-300">Email</label>
-                  <Input id="email" type="email" placeholder="alan@enigma.com" className="bg-zinc-900/40 border-zinc-800 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/50 transition-all" />
+                  <Input id="email" name="email" type="email" required placeholder="alan@enigma.com" className="bg-zinc-900/40 border-zinc-800 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/50 transition-all" />
                 </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor="message" className="text-sm font-medium text-zinc-300">Message</label>
-                <Textarea id="message" placeholder="How can I help you?" className="min-h-[120px] bg-zinc-900/40 border-zinc-800 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/50 transition-all" />
+                <Textarea id="message" name="message" required placeholder="How can I help you?" className="min-h-[120px] bg-zinc-900/40 border-zinc-800 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/50 transition-all" />
               </div>
-              <Button type="submit" className="w-full h-12 bg-zinc-100 hover:bg-white text-zinc-900 font-medium">
-                Send Message <Send className="w-4 h-4 ml-2" />
+              
+              {submitStatus === "error" && (
+                <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-900/50 rounded-lg flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-2" /> Something went wrong. Please try again.
+                </div>
+              )}
+              
+              {submitStatus === "success" && (
+                <div className="p-3 text-sm text-emerald-400 bg-emerald-900/20 border border-emerald-900/50 rounded-lg flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2" /> Message sent successfully! I&apos;ll get back to you soon.
+                </div>
+              )}
+
+              <Button type="submit" disabled={isSubmitting} className="w-full h-12 bg-zinc-100 hover:bg-white text-zinc-900 font-medium transition-all disabled:opacity-50">
+                {isSubmitting ? (
+                  <>Sending... <Loader2 className="w-4 h-4 ml-2 animate-spin" /></>
+                ) : (
+                  <>Send Message <Send className="w-4 h-4 ml-2" /></>
+                )}
               </Button>
             </motion.form>
           </motion.div>
